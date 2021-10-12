@@ -1,0 +1,33 @@
+{%- set type_lookup = {
+  'string': 'str',
+  'number': 'float',
+  'integer': 'int',
+  'boolean': 'bool',
+  'object': 'Dict[str, Any]',
+  'array': 'List[Any]',
+  'datetime': 'str',
+  'any': 'Any',
+} -%}
+# This file was generated automatically from a frictionless datapackage
+#  using frictionless-dataclass.
+
+from dataclasses import dataclass
+from typing import Optional, Dict, List, Any
+
+class {{ pkg.descriptor['name']|slugify }}:
+  '''{{ pkg.descriptor['title'] }}'''
+  {% for rc in pkg.resources %}
+  @dataclass
+  class {{ rc.name|slugify }}:
+    '''{{ rc.descriptor['description'] }}'''
+    {%- for field in rc.schema.fields %}
+    # ({{ field.type }}) {{ field.descriptor['description'] }}
+    {%- with field_type = type_lookup[field.type] %}
+    {%- if field.constraints and field.constraints.get('required') %}
+    {{ field.name }}: {{ field_type }} = {{ field_type }}()
+    {%- else %}
+    {{ field.name }}: Optional[{{ field_type }}] = None
+    {%- endif %}
+    {%- endwith %}
+    {% endfor %}
+  {%- endfor %}
