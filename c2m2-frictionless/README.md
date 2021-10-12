@@ -15,21 +15,15 @@ import c2m2_frictionless
 from c2m2_frictionless import C2M2
 
 def c2m2_generator():
-  ns = C2M2.id_namespace(
-    id='my_ns',
-    abbreviation='MYDCC',
-    name='My DCC',
-    description='My DCC is about things',
-  )
-  # emit records as they are generated in any order
-  yield ns
+  ns = 'my_ns'
   project = C2M2.project(
-    id_namespace=ns.id,
+    id_namespace=ns,
     local_id='MYDCC',
     abbreviation='MYDCC',
     name='My DCC',
     description='My DCC is about things',
   )
+  # emit records as they are generated in any order
   yield project
   # resolve any number of files, subjects, etc.. and map them to the C2M2 model from
   #  the DCC's internal database or API.
