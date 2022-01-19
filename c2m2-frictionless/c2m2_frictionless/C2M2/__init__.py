@@ -31,7 +31,7 @@ class table_schema_specs_for_c2m2_encoding_of_dcc_metadata:
     # (integer) The size of this file in bytes
     size_in_bytes: Optional[int] = None
     
-    # (integer) The total decompressed size in bytes of the contents of this file
+    # (integer) The total decompressed size in bytes of the contents of this file: null if this file is not compressed
     uncompressed_size_in_bytes: Optional[int] = None
     
     # (string) (preferred) SHA-256 checksum for this file [sha256, md5 cannot both be null]
@@ -43,10 +43,13 @@ class table_schema_specs_for_c2m2_encoding_of_dcc_metadata:
     # (string) A filename with no prepended PATH information
     filename: Optional[str] = None
     
-    # (string) An EDAM CV term ID identifying the digital format of this file (e.g. TSV or FASTQ)
+    # (string) An EDAM CV term ID identifying the digital format of this file (e.g. TSV or FASTQ): if this file is compressed, this should be its _uncompressed_ format
     file_format: Optional[str] = None
     
-    # (string) An EDAM CV term ID identifying the type of information stored in this file (e.g. RNA sequence reads)
+    # (string) An EDAM CV term ID identifying the compression format of this file (e.g. gzip or bzip2): null if this file is not compressed
+    compression_format: Optional[str] = None
+    
+    # (string) An EDAM CV term ID identifying the type of information stored in this file (e.g. RNA sequence reads): null if is_bundle is set to true
     data_type: Optional[str] = None
     
     # (string) An OBI CV term ID describing the type of experiment that generated the results summarized by this file
@@ -54,6 +57,12 @@ class table_schema_specs_for_c2m2_encoding_of_dcc_metadata:
     
     # (string) A MIME type describing this file
     mime_type: Optional[str] = None
+    
+    # (string) If this file is a bundle encoding more than one sub-file, this field gives the id_namespace of a collection listing the bundle's sub-file contents. Null otherwise.
+    bundle_collection_id_namespace: Optional[str] = None
+    
+    # (string) If this file is a bundle encoding more than one sub-file, this field gives the local_id of a collection listing the bundle's sub-file contents. Null otherwise.
+    bundle_collection_local_id: Optional[str] = None
     
   @dataclass
   class biosample:
@@ -106,32 +115,44 @@ class table_schema_specs_for_c2m2_encoding_of_dcc_metadata:
     # (string) A CFDE CV term categorizing this subject by multiplicity
     granularity: str = str()
     
+    # (string) The sex of this subject
+    sex: Optional[str] = None
+    
+    # (string) The ethnicity of this subject
+    ethnicity: Optional[str] = None
+    
+    # (number) The age in years (with a fixed precision of two digits past the decimal point) of this subject when they were first enrolled in the primary project within which they were studied
+    age_at_enrollment: Optional[float] = None
+    
   @dataclass
-  class primary_dcc_contact:
-    '''One primary contact person for the Common Fund data coordinating center (DCC, identified by the given project foreign key) that produced this C2M2 instance'''
-    # (string) Email address of this DCC contact
-    contact_email: str = str()
+  class dcc:
+    '''The Common Fund program or data coordinating center (DCC, identified by the given project foreign key) that produced this C2M2 instance'''
+    # (string) The identifier for this DCC, issued by the CFDE-CC.
+    id: str = str()
     
-    # (string) Name of this DCC contact
-    contact_name: str = str()
-    
-    # (string) The id_namespace of the project record representing this contact's DCC [part 1 of 2-component composite foreign key]
-    project_id_namespace: str = str()
-    
-    # (string) The local_id of the project record representing this contact's DCC [part 2 of 2-component composite foreign key]
-    project_local_id: str = str()
+    # (string) A short, human-readable, machine-read-friendly label for this DCC.
+    dcc_name: str = str()
     
     # (string) A very short display label for this contact's DCC
     dcc_abbreviation: str = str()
     
-    # (string) A short, human-readable, machine-read-friendly label for this contact's DCC
-    dcc_name: str = str()
-    
-    # (string) A human-readable description of this contact's DCC
+    # (string) A human-readable description of this DCC.
     dcc_description: Optional[str] = None
     
-    # (string) URL of the front page of the website for this contact's DCC
+    # (string) Email address of this DCC's primary contact.
+    contact_email: str = str()
+    
+    # (string) Name of this DCC's primary contact.
+    contact_name: str = str()
+    
+    # (string) URL of the front page of the website for this DCC
     dcc_url: str = str()
+    
+    # (string) ID of the identifier namespace for the project record representing the top-level C2M2 metadataset produced by this DCC.
+    project_id_namespace: str = str()
+    
+    # (string) Foreign key identifying the project record representing the top-level C2M2 metadataset produced by this DCC.
+    project_local_id: str = str()
     
   @dataclass
   class project:
@@ -331,6 +352,9 @@ class table_schema_specs_for_c2m2_encoding_of_dcc_metadata:
     # (string) The ID of this subject
     subject_local_id: str = str()
     
+    # (number) The age in years (with a fixed precision of two digits past the decimal point) of this subject when this biosample was taken
+    age_at_sampling: Optional[float] = None
+    
   @dataclass
   class biosample_disease:
     '''Association between a C2M2 biosample and a disease known to be associated with that biosample'''
@@ -354,6 +378,54 @@ class table_schema_specs_for_c2m2_encoding_of_dcc_metadata:
     
     # (string) A Disease Ontology CV term ID describing this disease
     disease: str = str()
+    
+  @dataclass
+  class biosample_substance:
+    '''Association between a C2M2 biosample and a PubChem substance experimentally associated with that biosample'''
+    # (string) Identifier namespace for this biosample
+    biosample_id_namespace: str = str()
+    
+    # (string) The ID of this biosample
+    biosample_local_id: str = str()
+    
+    # (string) A PubChem substance ID (SID) describing this substance
+    substance: str = str()
+    
+  @dataclass
+  class subject_substance:
+    '''Association between a C2M2 subject and a PubChem substance experimentally associated with that subject'''
+    # (string) Identifier namespace for this subject
+    subject_id_namespace: str = str()
+    
+    # (string) The ID of this subject
+    subject_local_id: str = str()
+    
+    # (string) A PubChem substance ID (SID) describing this substance
+    substance: str = str()
+    
+  @dataclass
+  class biosample_gene:
+    '''Association between a C2M2 biosample and an Ensembl gene especially relevant to it'''
+    # (string) Identifier namespace for this biosample
+    biosample_id_namespace: str = str()
+    
+    # (string) The ID of this biosample
+    biosample_local_id: str = str()
+    
+    # (string) An Ensembl gene ID
+    gene: str = str()
+    
+  @dataclass
+  class subject_race:
+    '''Identification of a C2M2 subject with one or more self-selected races'''
+    # (string) Identifier namespace for this subject
+    subject_id_namespace: str = str()
+    
+    # (string) The ID of this subject
+    subject_local_id: str = str()
+    
+    # (string) A race self-identified by this subject
+    race: Optional[str] = None
     
   @dataclass
   class subject_role_taxonomy:
@@ -462,6 +534,57 @@ class table_schema_specs_for_c2m2_encoding_of_dcc_metadata:
     
     # (array) A list of synonyms for this term as identified by the Disease Ontology metadata
     synonyms: Optional[List[Any]] = None
+    
+  @dataclass
+  class compound:
+    '''List of PubChem 'compound' terms (normalized chemical structures) associated with PubChem 'substance' terms (specific formulations of chemical materials) directly referenced in this C2M2 submission'''
+    # (string) A PubChem compound ID (CID)
+    id: str = str()
+    
+    # (string) A short, human-readable, machine-read-friendly label for this PubChem CID
+    name: str = str()
+    
+    # (string) A human-readable description of this PubChem CID
+    description: Optional[str] = None
+    
+    # (array) A list of synonyms for this PubChem CID
+    synonyms: Optional[List[Any]] = None
+    
+  @dataclass
+  class substance:
+    '''List of PubChem 'substance' terms (specific formulations of chemical materials) directly referenced in this C2M2 submission'''
+    # (string) A PubChem substance ID (SID)
+    id: str = str()
+    
+    # (string) A short, human-readable, machine-read-friendly label for this PubChem SID
+    name: str = str()
+    
+    # (string) A human-readable description of this PubChem SID
+    description: Optional[str] = None
+    
+    # (array) A list of synonyms for this PubChem SID
+    synonyms: Optional[List[Any]] = None
+    
+    # (string) The (unique) PubChem compound ID (CID) associated with this PubChem SID
+    compound: str = str()
+    
+  @dataclass
+  class gene:
+    '''List of Ensembl genes directly referenced in this C2M2 submission'''
+    # (string) An Ensembl gene ID (e.g. 'ENSG00000012048')
+    id: str = str()
+    
+    # (string) The Ensembl 'Name' for this gene (e.g. 'BRCA1')
+    name: str = str()
+    
+    # (string) The Ensembl 'Description' of this gene (e.g. 'BRCA1 DNA repair associated')
+    description: Optional[str] = None
+    
+    # (array) A list of Ensembl 'Gene synonyms' for this gene (e.g. ['BRCC1', 'FANCS', 'PPP1R53', 'RNF53'])
+    synonyms: Optional[List[Any]] = None
+    
+    # (string) An NCBI Taxonomy Database ID identifying this gene's source organism (e.g. 'NCBItxid9606'
+    organism: str = str()
     
   @dataclass
   class id_namespace:
