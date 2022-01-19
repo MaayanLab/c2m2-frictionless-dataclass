@@ -25,6 +25,13 @@ def c2m2_generator():
   )
   # emit records as they are generated in any order
   yield project
+  yield C2M2.file(
+    id_namespace=project.id_namespace,
+    local_id='myfile',
+    project_id_namespace=project.id_namespace,
+    project_local_id=project.local_id,
+    size_in_bytes=100,
+  )
   # resolve any number of files, subjects, etc.. and map them to the C2M2 model from
   #  the DCC's internal database or API.
   for record in my_dcc_query():
@@ -38,5 +45,5 @@ if __name__ == '__main__':
   c2m2_frictionless.build_term_tables(datapackage)
   # ensure validity of the datapackage
   c2m2_frictionless.validate_datapackage(pkg)
-  validate_id_namespace_name_uniqueness(pkg)
+  c2m2_frictionless.validate_id_namespace_name_uniqueness(pkg)
 ```
