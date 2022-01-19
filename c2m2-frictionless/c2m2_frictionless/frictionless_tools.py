@@ -1,5 +1,6 @@
 import os
 import sys
+import csv
 import json
 import shutil
 import traceback
@@ -34,21 +35,28 @@ def create_datapackage(schema, it, outdir):
     os.path.join(frictionless_path, schema, 'datapackage.json'),
     os.path.join(outdir, 'datapackage.json'),
   )
+  pkg = DataPackage(os.path.join(outdir, 'datapackage.json'))
+  rcs = { rc.name: rc for rc in pkg.resources }
   fps = {}
+  writers = {}
   for obj in it:
     table = obj.__class__.__name__
-    obj_dict = {k: cell_dumps(v) for k, v in asdict(obj).items()}
     if table not in fps:
-      fps[table] = open(os.path.join(outdir, f"{table}.tsv"), 'w')
-      print(*obj_dict.keys(), sep='\t', file=fps[table])
-    print(*obj_dict.values(), sep='\t', file=fps[table])
+      rc = rcs[table]
+      fps[table] = open(os.path.join(outdir, rc.descriptor['path']), 'w')
+      writers[table] = csv.DictWriter(fps[table], [field.name for field in rc.schema.fields], delimiter='\t')
+      writers[table].writeheader()
+    writers[table].writerow(asdict(obj))
   #
-  pkg = DataPackage(os.path.join(outdir, 'datapackage.json'))
+  for fp in fps.values():
+    fp.close()
   # add empty files for any resources not addressed
   for rc in pkg.resources:
     if rc.name not in fps:
       with open(os.path.join(outdir, rc.descriptor['path']), 'w') as fw:
-        print(*[field.name for field in rc.schema.fields], sep='\t', end='', file=fw)
+        writer = csv.DictWriter(fw, [field.name for field in rc.schema.fields], delimiter='\t')
+        writer.writeheader()
+  #
   return pkg
 
 def validate_datapackage(pkg):
